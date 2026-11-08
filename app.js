@@ -1,6 +1,6 @@
 /* ============================================================
    Sprout AI Studio — complete standalone PWA
-   AI Post (Gemini) + Image (Pollinations AI) with approvals
+   Text: Gemini v1 | Image: Pollinations AI (Free)
    ============================================================ */
 
 const $ = (s) => document.querySelector(s);
@@ -8,108 +8,46 @@ const $$ = (s) => document.querySelectorAll(s);
 
 /* ---------- Goal templates ---------- */
 const TEMPLATES = {
-  lead_gen: {
-    label: 'Lead Generation',
-    instruction: `GOAL: LEAD GENERATION\n- Hook must address a specific pain point.\n- Body must build trust and state the value.\n- End with a STRONG CTA (DM, form, link, call).\n- Do NOT be salesy or cringe. Be confident, clear, human.`
-  },
-  awareness: {
-    label: 'Brand Awareness / Reach',
-    instruction: `GOAL: BRAND AWARENESS & REACH\n- Hook must be bold, surprising, or emotionally resonant.\n- Highly shareable: short, punchy, memorable lines.\n- Build brand identity and personality.\n- End with a share or tag prompt.\n- Avoid direct selling.`
-  },
-  engagement: {
-    label: 'Engagement',
-    instruction: `GOAL: ENGAGEMENT (Comments, Likes, Shares)\n- Hook must provoke curiosity or emotion.\n- Body should invite opinions, stories, or relatable experiences.\n- End with an open, easy-to-answer question.\n- Encourage tagging or sharing.\n- Keep it conversational and warm.`
-  },
-  launch: {
-    label: 'Product / Service Launch',
-    instruction: `GOAL: PRODUCT / SERVICE LAUNCH\n- Hook must create excitement about the new offering.\n- Highlight 3–4 KEY BENEFITS in plain language.\n- Show what problem it solves.\n- End with urgency plus a clear next-step CTA.`
-  },
-  educational: {
-    label: 'Educational / Value Post',
-    instruction: `GOAL: EDUCATIONAL / VALUE POST\n- Hook must promise a specific, useful outcome.\n- Deliver REAL value: tips, steps, a framework, or insight.\n- Use a short, scannable structure.\n- Establish the brand as a trusted expert.\n- End with a soft CTA: follow, save, or DM for more.`
-  },
-  event: {
-    label: 'Event Promotion',
-    instruction: `GOAL: EVENT PROMOTION\n- Hook must convey WHAT, WHEN, WHERE, and WHO.\n- Create urgency (limited seats, deadline).\n- End with a clear registration / RSVP CTA.\n- Tone should be exciting and invite action.`
-  },
-  sale: {
-    label: 'Sale / Offer',
-    instruction: `GOAL: SALE / OFFER\n- Hook must announce the offer with urgency.\n- Clearly state: what's on offer, the discount, the deadline, and how to grab it.\n- Use specific numbers, prices, or percentages.\n- End with a strong, urgent CTA.`
-  }
+  lead_gen: { label: 'Lead Generation', instruction: `GOAL: LEAD GENERATION\n- Hook must address a specific pain point.\n- Body must build trust and state the value.\n- End with a STRONG CTA (DM, form, link, call).\n- Do NOT be salesy.` },
+  awareness: { label: 'Brand Awareness / Reach', instruction: `GOAL: BRAND AWARENESS\n- Hook must be bold and shareable.\n- Build brand identity.\n- Avoid direct selling.` },
+  engagement: { label: 'Engagement', instruction: `GOAL: ENGAGEMENT\n- Hook must provoke curiosity.\n- End with an open question.\n- Keep it conversational.` },
+  launch: { label: 'Product / Service Launch', instruction: `GOAL: LAUNCH\n- Hook must create excitement.\n- Highlight 3-4 key benefits.\n- End with urgency + CTA.` },
+  educational: { label: 'Educational / Value Post', instruction: `GOAL: EDUCATIONAL\n- Hook must promise a useful outcome.\n- Deliver real value: tips, steps, framework.\n- End with a soft CTA.` },
+  event: { label: 'Event Promotion', instruction: `GOAL: EVENT\n- Include WHAT, WHEN, WHERE, WHO.\n- Create urgency.\n- Clear RSVP CTA.` },
+  sale: { label: 'Sale / Offer', instruction: `GOAL: SALE\n- Announce offer with urgency.\n- State discount, deadline, and how to grab.\n- Strong CTA.` }
 };
 
 /* ---------- System Prompts ---------- */
-const SYSTEM_POST = `You are a professional Facebook content writer. Your only job is to receive brand context and a goal, and transform it into a compelling, publish-ready Facebook post.
-You write like a real human — someone who deeply understands social media. You adapt your tone to match the nature of the brand and the goal.
+const SYSTEM_POST = `You are a professional Facebook content writer. Your only job is to transform brand context and a goal into a compelling, publish-ready Facebook post.
+Write like a real human. Adapt your tone to the brand.
+Create a hook. Build a body in 2-4 short paragraphs. Close with a natural CTA. Add 3-5 hashtags.
+NEVER use robotic words ("cutting-edge", "synergy", etc.). NEVER start with "I".
+OUTPUT ONLY THE POST TEXT. No markdown, no quotes.`;
 
-WHAT YOU WILL RECEIVE:
-- Brand name, website / page link, and optional brand context.
-- A GOAL.
-- Optional extra instructions.
+const SYSTEM_REVISE = `You are an expert Facebook writer. Revise the post based on human feedback. Keep everything else intact. Output ONLY the revised text.`;
 
-YOUR JOB:
-1. Understand the audience, tone, and personality.
-2. Create a hook — a single first line that stops scrollers.
-3. Build the body in 2–4 short paragraphs. Short line breaks.
-4. Close with a natural, non-cringy CTA matching the GOAL.
-5. Add 3–5 relevant hashtags.
+const SYSTEM_NEW_POST = `You are a professional Facebook writer. The human rejected the previous post. Write a completely FRESH post from a different angle. Output ONLY the new text.`;
 
-TONE RULES:
-- NEVER use robotic words: "cutting-edge", "synergy", "game-changer", "revolutionize", "unleash", "elevate", "in today's fast-paced world".
-- No placeholders like [Your Name] or [Link].
-- NEVER start the post with "I".
-- No emojis unless the tone clearly benefits.
-- Use line breaks generously.
+const SYSTEM_IMAGE_PROMPT = `You are a creative director. Generate a detailed image prompt based on this post. It should be a premium visual background with NO text or typography. Output ONLY the prompt.`;
 
-OUTPUT RULES (STRICT):
-- Output ONLY the final Facebook post text.
-- Do NOT say "Here is your post".
-- No markdown headings, no surrounding quotes.
-- The output must be 100% copy-paste ready for Facebook.`;
-
-const SYSTEM_REVISE = `You are an expert Facebook writer. Your job is to take an incoming post and revise it based on the feedback the human submitted.
-Apply the feedback precisely to the existing post. Keep everything that was not mentioned in the feedback.
-Output ONLY the final revised post text. No commentary.`;
-
-const SYSTEM_NEW_POST = `You are a professional Facebook content writer. The human has rejected the previous attempt and wants a FRESH post from a different angle.
-Do NOT rewrite the previous post. Start completely fresh. Use a new hook, new body, new angle.
-Keep the same brand, goal, and audience.
-Output ONLY the final Facebook post text.`;
-
-const SYSTEM_IMAGE_PROMPT = `You are an expert creative director. Analyze the Facebook post and the brand, and generate a detailed image prompt for creating a premium visual background for the post.
-INSTRUCTIONS:
-- Understand the message, theme, and mood.
-- Create a strong visual concept.
-- Modern, premium, clean look.
-- Do NOT include any text, typography, or logos.
-- Output ONLY the final image prompt. No explanations.`;
-
-const SYSTEM_REEL = `You are an expert short-form video (reel) scriptwriter. Generate a detailed, shot-by-shot reel script based on the Facebook post and the brand context.
-OUTPUT FORMAT — return valid JSON ONLY with this exact schema:
-{
-  "title": "short reel title",
-  "duration": "30s",
-  "hook": { "spoken": "...", "onScreenText": "...", "visual": "..." },
-  "scenes": [ { "timeRange": "3-8s", "spoken": "...", "onScreenText": "...", "visual": "..." } ],
-  "cta": { "spoken": "...", "onScreenText": "...", "visual": "..." },
-  "music": "genre suggestion",
-  "hashtags": ["...", "..."],
-  "coverPrompt": "a detailed prompt for the cover image (no text)"
-}
-No markdown, no commentary — return raw valid JSON only.`;
+const SYSTEM_REEL = `You are a reel scriptwriter. Generate a JSON storyboard. Schema: {"title": "...", "duration": "30s", "hook": {"spoken":"...", "onScreenText":"...", "visual":"..."}, "scenes": [{"timeRange":"3-8s", "spoken":"...", "onScreenText":"...", "visual":"..."}], "cta": {...}, "music": "...", "hashtags": ["..."], "coverPrompt": "..."}. Return RAW JSON only.`;
 
 /* ---------- State ---------- */
 const state = {
   brandName: '', brandUrl: '', goal: '', contentType: 'image',
   brandContext: '', extraNotes: '', post: '', postAttempts: 0,
   visualAttempts: 0, imagePrompt: '', imageBlob: null, imageUrl: null,
-  reelScript: null, settings: { geminiKey: '', textModel: 'gemini-1.5-flash' }
+  reelScript: null, settings: { geminiKey: '', textModel: 'gemini-1.5-flash-latest' }
 };
 
-/* ---------- Gemini API ---------- */
+/* ---------- Gemini API (Uses v1 endpoint) ---------- */
 async function geminiText(systemPrompt, userMessage, apiKey, model) {
-  const m = model || state.settings.textModel || 'gemini-1.5-flash';
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`;
+  // Default to gemini-1.5-flash-latest if none is provided
+  let m = model || state.settings.textModel || 'gemini-1.5-flash-latest';
+  // Clean up common typos
+  if(m === 'gemini-1.5-flash') m = 'gemini-1.5-flash-latest'; 
+  
+  const url = `https://generativelanguage.googleapis.com/v1/models/${m}:generateContent?key=${apiKey}`;
   const body = { contents: [{ role: 'user', parts: [{ text: userMessage }] }] };
   if (systemPrompt) body.systemInstruction = { parts: [{ text: systemPrompt }] };
 
@@ -118,27 +56,28 @@ async function geminiText(systemPrompt, userMessage, apiKey, model) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   });
+  
   if (!res.ok) {
     const errText = await res.text();
-    if (res.status === 404) throw new Error('404: Model not found. Please change Text Model in Settings (e.g., gemini-1.5-flash or gemini-2.0-flash)');
-    throw new Error('Gemini API: ' + errText.slice(0, 150));
+    if (res.status === 404) throw new Error(`404 Error: Model "${m}" nahi mila. Settings mein Text Model ko "gemini-1.5-flash-latest" likhein.`);
+    throw new Error('Gemini API Error: ' + errText.slice(0, 150));
   }
+  
   const data = await res.json();
   const parts = data.candidates?.[0]?.content?.parts || [];
   const text = parts.map((p) => p.text).filter(Boolean).join('').trim();
-  if (!text) throw new Error('Empty response from Gemini');
+  if (!text) throw new Error('AI ne koi text generate nahi kiya.');
   return text;
 }
 
 /* ---------- Pollinations AI (Free Image Generation) ---------- */
 async function generateFreeImage(prompt) {
-  // Generate a random seed for varied results
   const seed = Math.floor(Math.random() * 1000000);
   const encodedPrompt = encodeURIComponent(prompt);
   const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1080&height=1080&nologo=true&seed=${seed}`;
   
   const res = await fetch(url);
-  if (!res.ok) throw new Error('Free image generation failed. Please try again.');
+  if (!res.ok) throw new Error('Free image generation failed. Try again.');
   return await res.blob();
 }
 
@@ -179,13 +118,13 @@ function loadSettings() {
     Object.assign(state.settings, saved);
   } catch (_) {}
   $('#geminiKey').value = state.settings.geminiKey || '';
-  $('#textModel').value = state.settings.textModel || '';
+  $('#textModel').value = state.settings.textModel || 'gemini-1.5-flash-latest';
 }
 
 function saveSettings() {
   state.settings = {
     geminiKey: $('#geminiKey').value.trim(),
-    textModel: $('#textModel').value.trim() || 'gemini-1.5-flash'
+    textModel: $('#textModel').value.trim() || 'gemini-1.5-flash-latest'
   };
   localStorage.setItem('sprout_settings', JSON.stringify(state.settings));
   toast('✓ Settings saved');
@@ -229,7 +168,7 @@ async function newPost() {
   if (!state.settings.geminiKey) return toast('API key missing ⚙️', true);
   state.postAttempts++;
   $('#postAttemptBadge').textContent = 'Attempt ' + state.postAttempts;
-  const userMsg = `${buildBrandBlock()}\n\n---\n\nThe previous post was REJECTED. Write a completely fresh post from a different angle — new hook, new structure, new approach. Do NOT reuse the rejected version.\n\nRejected post:\n"""\n${state.post}\n"""`;
+  const userMsg = `${buildBrandBlock()}\n\n---\n\nPrevious rejected post:\n"""\n${state.post}\n"""\n\nWrite a completely fresh post from a different angle.`;
   await writePost(SYSTEM_NEW_POST, userMsg, 'Naya post likha ja raha hai...');
 }
 
@@ -261,10 +200,10 @@ async function approvePost() {
   $('#visualAttemptBadge').textContent = 'Attempt 1';
 
   if (state.contentType === 'reel') {
-    $('#visualSub').textContent = 'Reel script aur cover image ready hai. Dono review karein.';
+    $('#visualSub').textContent = 'Reel script aur cover image ready hai.';
     $('#reelScriptContainer').classList.remove('hidden');
   } else {
-    $('#visualSub').textContent = 'Image ready hai. Pasand aye to approve karein, warna regenerate karein.';
+    $('#visualSub').textContent = 'Image ready hai.';
     $('#reelScriptContainer').classList.add('hidden');
   }
 
@@ -277,26 +216,25 @@ async function generateVisual() {
 
   try {
     if (state.contentType === 'reel') {
-      showLoading('Reel script likha ja raha hai...', 'AI is writing the storyboard');
+      showLoading('Reel script likha ja raha hai...', 'Writing storyboard');
       state.reelScript = null;
       let scriptText = '';
       try {
         scriptText = await geminiText(
           SYSTEM_REEL,
-          `Brand: ${state.brandName}\nURL: ${state.brandUrl}\nGoal: ${state.goal}\nPost:\n"""\n${state.post}\n"""\n\nGenerate the reel JSON now.`,
+          `Brand: ${state.brandName}\nPost:\n"""\n${state.post}\n"""\n\nGenerate the JSON now.`,
           state.settings.geminiKey
         );
         state.reelScript = parseJSON(scriptText);
       } catch (e) {
-        console.warn('Reel JSON parse failed:', e, scriptText);
-        throw new Error('Reel script format issue — please retry or change text model in settings.');
+        throw new Error('Reel script format issue. Try changing text model.');
       }
       renderReelScript(state.reelScript, 'reelScript');
 
-      const coverPrompt = state.reelScript.coverPrompt || `A clean, premium vertical background image for a reel about: ${state.brandName}. No text, no typography. Cinematic lighting.`;
+      const coverPrompt = state.reelScript.coverPrompt || `A premium background for ${state.brandName}. No text.`;
       state.imagePrompt = coverPrompt;
 
-      showLoading('Reel cover image ban rahi hai...', 'This may take 10-20 seconds');
+      showLoading('Cover image ban rahi hai...', 'Generating free image');
       const blob = await generateFreeImage(coverPrompt);
       if (state.imageUrl) URL.revokeObjectURL(state.imageUrl);
       state.imageBlob = blob;
@@ -308,13 +246,9 @@ async function generateVisual() {
       showLoading('Image prompt ban raha hai...', 'Analyzing post theme');
       let imgPrompt = '';
       try {
-        imgPrompt = await geminiText(
-          SYSTEM_IMAGE_PROMPT,
-          `Brand: ${state.brandName}\nPost:\n"""\n${state.post}\n"""`,
-          state.settings.geminiKey
-        );
+        imgPrompt = await geminiText(SYSTEM_IMAGE_PROMPT, `Brand: ${state.brandName}\nPost:\n"""\n${state.post}\n"""`, state.settings.geminiKey);
       } catch (_) {
-        imgPrompt = `A clean modern background illustration for ${state.brandName}, no text, cinematic lighting, premium feel`;
+        imgPrompt = `A modern background for ${state.brandName}, no text, premium feel`;
       }
       state.imagePrompt = imgPrompt;
 
@@ -348,22 +282,18 @@ function renderReelScript(script, containerId) {
     </div>`;
 
   c.innerHTML = `
-    <h4>🎬 ${esc(script.title || 'Reel Script')} ${script.duration ? `· ${esc(script.duration)}` : ''}</h4>
+    <h4>🎬 ${esc(script.title || 'Reel Script')}</h4>
     <div class="reel-scene">
-      <div class="time">⏱ 0-3s · HOOK</div>
+      <div class="time">HOOK</div>
       ${script.hook?.spoken ? `<div class="row-item"><strong>Voiceover</strong>${esc(script.hook.spoken)}</div>` : ''}
-      ${script.hook?.onScreenText ? `<div class="row-item"><strong>On-screen</strong>${esc(script.hook.onScreenText)}</div>` : ''}
       ${script.hook?.visual ? `<div class="row-item"><strong>Visual</strong>${esc(script.hook.visual)}</div>` : ''}
     </div>
     ${(script.scenes || []).map(sceneHTML).join('')}
     <div class="reel-scene">
-      <div class="time">⏱ 25-30s · CTA</div>
+      <div class="time">CTA</div>
       ${script.cta?.spoken ? `<div class="row-item"><strong>Voiceover</strong>${esc(script.cta.spoken)}</div>` : ''}
-      ${script.cta?.onScreenText ? `<div class="row-item"><strong>On-screen</strong>${esc(script.cta.onScreenText)}</div>` : ''}
       ${script.cta?.visual ? `<div class="row-item"><strong>Visual</strong>${esc(script.cta.visual)}</div>` : ''}
     </div>
-    ${script.music ? `<div class="reel-scene"><div class="time">🎵 MUSIC</div><div class="row-item">${esc(script.music)}</div></div>` : ''}
-    ${(script.hashtags || []).length ? `<div class="reel-scene"><div class="time"># HASHTAGS</div><div class="row-item">${script.hashtags.map((h) => '#' + esc(h.replace(/^#/, ''))).join(' ')}</div></div>` : ''}
   `;
 }
 
@@ -415,7 +345,7 @@ async function regenerateVisual() {
     return;
   }
 
-  showLoading('Naya image ban raha hai...', 'Free AI is regenerating');
+  showLoading('Naya image ban raha hai...');
   try {
     const blob = await generateFreeImage(state.imagePrompt);
     if (state.imageUrl) URL.revokeObjectURL(state.imageUrl);
@@ -438,11 +368,11 @@ async function applyVisualFeedback() {
   state.visualAttempts++;
   $('#visualAttemptBadge').textContent = 'Attempt ' + state.visualAttempts;
 
-  showLoading('Feedback apply ho raha hai...', 'Refining the image prompt');
+  showLoading('Feedback apply ho raha hai...');
   try {
     const refinedPrompt = await geminiText(
-      `You are an image prompt engineer. Take the current image prompt and the human feedback, and rewrite the prompt to reflect the feedback. Output ONLY the new prompt.`,
-      `Current prompt:\n"""\n${state.imagePrompt}\n"""\n\nHuman feedback:\n"""\n${fb}\n"""`,
+      `You are an image prompt engineer. Rewrite this prompt based on feedback. Output ONLY the new prompt.`,
+      `Current prompt:\n"""\n${state.imagePrompt}\n"""\n\nFeedback:\n"""\n${fb}\n"""`,
       state.settings.geminiKey
     );
     state.imagePrompt = refinedPrompt;
@@ -468,7 +398,7 @@ function downloadImage() {
   if (!state.imageUrl) return toast('Image available nahi', true);
   const a = document.createElement('a');
   a.href = state.imageUrl;
-  a.download = `${slug(state.brandName) || 'poster'}-${Date.now()}.png`;
+  a.download = `poster-${Date.now()}.png`;
   a.click();
 }
 
@@ -477,14 +407,14 @@ function downloadCaption() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `${slug(state.brandName) || 'caption'}-${Date.now()}.txt`;
+  a.download = `caption-${Date.now()}.txt`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 function downloadReelScript() {
   if (!state.reelScript) return toast('Reel script nahi hai', true);
-  const txt = formatReelAsText(state.reelScript);
+  const txt = JSON.stringify(state.reelScript, null, 2);
   const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -494,43 +424,12 @@ function downloadReelScript() {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-function formatReelAsText(s) {
-  const L = [];
-  L.push(`REEL SCRIPT: ${s.title || ''}`);
-  L.push(`Duration: ${s.duration || '30s'}\n`);
-  L.push('--- HOOK (0-3s) ---');
-  if (s.hook?.spoken) L.push(`Voiceover: ${s.hook.spoken}`);
-  if (s.hook?.onScreenText) L.push(`On-screen: ${s.hook.onScreenText}`);
-  if (s.hook?.visual) L.push(`Visual: ${s.hook.visual}`);
-  L.push('');
-  (s.scenes || []).forEach((sc, i) => {
-    L.push(`--- SCENE ${i + 1} (${sc.timeRange || ''}) ---`);
-    if (sc.spoken) L.push(`Voiceover: ${sc.spoken}`);
-    if (sc.onScreenText) L.push(`On-screen: ${sc.onScreenText}`);
-    if (sc.visual) L.push(`Visual: ${sc.visual}`);
-    L.push('');
-  });
-  L.push('--- CTA (last 5s) ---');
-  if (s.cta?.spoken) L.push(`Voiceover: ${s.cta.spoken}`);
-  if (s.cta?.onScreenText) L.push(`On-screen: ${s.cta.onScreenText}`);
-  if (s.cta?.visual) L.push(`Visual: ${s.cta.visual}`);
-  L.push('');
-  if (s.music) L.push(`Music: ${s.music}`);
-  if (s.hashtags?.length) L.push(`Hashtags: ${s.hashtags.map((h) => '#' + h.replace(/^#/, '')).join(' ')}`);
-  return L.join('\n');
-}
-
 function copyCaption() {
   navigator.clipboard.writeText(state.post)
-    .then(() => toast('✓ Caption copied to clipboard'))
-    .catch(() => toast('Copy fail — manually select karein', true));
+    .then(() => toast('✓ Caption copied'))
+    .catch(() => toast('Copy fail', true));
 }
 
-function slug(s) {
-  return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
-}
-
-/* ---------- Reset ---------- */
 function resetApp() {
   if (state.imageUrl) URL.revokeObjectURL(state.imageUrl);
   state.post = ''; state.postAttempts = 0; state.visualAttempts = 0;
@@ -556,9 +455,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const name = $('#brandName').value.trim();
     const url = $('#brandUrl').value.trim();
     const goal = $('#goalTemplate').value;
-    if (!name) return toast('Brand name required', true);
-    if (!url) return toast('Website / page link required', true);
-    if (!goal) return toast('Goal template select karein', true);
+    if (!name || !url || !goal) return toast('Tamam required fields bharein', true);
     if (!state.settings.geminiKey) return toast('Settings me Gemini API key daalein ⚙️', true);
 
     state.brandName = name; state.brandUrl = url; state.goal = goal;
@@ -572,11 +469,9 @@ document.addEventListener('DOMContentLoaded', () => {
   $('#approvePostBtn').addEventListener('click', approvePost);
   $('#newPostBtn').addEventListener('click', newPost);
   $('#revisePostBtn').addEventListener('click', revisePost);
-
   $('#approveVisualBtn').addEventListener('click', approveVisual);
   $('#regenVisualBtn').addEventListener('click', regenerateVisual);
   $('#applyVisualFeedbackBtn').addEventListener('click', applyVisualFeedback);
-
   $('#downloadImageBtn').addEventListener('click', downloadImage);
   $('#downloadCaptionBtn').addEventListener('click', downloadCaption);
   $('#downloadReelBtn').addEventListener('click', downloadReelScript);

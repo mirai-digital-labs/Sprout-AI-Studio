@@ -10,6 +10,7 @@
 <link rel="manifest" href="manifest.json" />
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%2310b981' width='100' height='100' rx='22'/><path d='M50 75V45M50 45c0-12 8-20 20-20 0 12-8 20-20 20zM50 55c0-10-7-17-17-17 0 10 7 17 17 17z' stroke='white' stroke-width='5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
 <style>
+/* CSS bilkul waisi hi hai, koi change nahi */
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
   --bg:#071410; --bg-grad:#0a1f17;
@@ -168,14 +169,14 @@ details[open] summary::after{color:var(--text)}
   <h3>⚙️ Settings</h3>
 
   <label>Gemini API Key <span class="req">*</span></label>
-  <input type="password" id="geminiKey" placeholder="AIzaSy... or AQ.Ab8..." autocomplete="off" />
+  <input type="password" id="geminiKey" placeholder="AIzaSy..." autocomplete="off" />
 
   <label>Gemini Text Model</label>
-  <input type="text" id="textModel" placeholder="gemini-1.5-flash" />
+  <input type="text" id="textModel" placeholder="gemini-1.5-flash-latest" />
 
   <p class="hint">
     🔑 Free key yahan se milegi: <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">aistudio.google.com</a><br><br>
-    🖼️ <strong>Note:</strong> Images 100% free (Pollinations AI) se generate hoti hain, isliye aap ko image API ki zaroorat nahi.<br><br>
+    🖼️ <strong>Note:</strong> Images 100% free (Pollinations AI) se generate hoti hain, isliye aap ko image model ki zaroorat nahi.<br><br>
     🔒 Ye settings sirf aap ke browser me save hoti hain (localStorage).
   </p>
 </div>
@@ -191,8 +192,7 @@ details[open] summary::after{color:var(--text)}
 </header>
 
 <main>
-
-<!-- STEP 1: BRAND & GOAL -->
+<!-- Step 1: Brand & Goal -->
 <section id="step1" class="step active">
   <div class="card">
     <h2><span class="step-num">1</span>Brand & Goal</h2>
@@ -234,14 +234,14 @@ details[open] summary::after{color:var(--text)}
   </div>
 </section>
 
-<!-- STEP 2: POST REVIEW -->
+<!-- Step 2: Post Review -->
 <section id="step2" class="step">
   <div class="card">
     <div class="card-header">
       <h2><span class="step-num">2</span>Review Post</h2>
       <span id="postAttemptBadge" class="badge pending">Attempt 1</span>
     </div>
-    <p class="sub">Post parhein. Pasand aye to approve karein. Agar naya chahiye to "New Post" dabayein — AI mukhtalif angle se likhega.</p>
+    <p class="sub">Post parhein. Pasand aye to approve karein. Agar naya chahiye to "New Post" dabayein.</p>
 
     <label>Generated Post <span class="opt">(editable)</span></label>
     <textarea id="postText" rows="12"></textarea>
@@ -254,13 +254,13 @@ details[open] summary::after{color:var(--text)}
     <details>
       <summary>✏️ Want specific changes?</summary>
       <label>Your feedback (optional)</label>
-      <textarea id="postFeedback" rows="3" placeholder="e.g. Stronger hook, remove hashtags, shorter body, mention our location..."></textarea>
+      <textarea id="postFeedback" rows="3" placeholder="e.g. Stronger hook, remove hashtags, shorter body..."></textarea>
       <button id="revisePostBtn" class="btn secondary" style="margin-top:10px;width:100%">Apply Changes</button>
     </details>
   </div>
 </section>
 
-<!-- STEP 3: VISUAL REVIEW -->
+<!-- Step 3: Visual Review -->
 <section id="step3" class="step">
   <div class="card">
     <div class="card-header">
@@ -290,13 +290,13 @@ details[open] summary::after{color:var(--text)}
     <details>
       <summary>✏️ Tweak the visual</summary>
       <label>What should change?</label>
-      <textarea id="visualFeedback" rows="2" placeholder="e.g. Warmer colors, more minimal, add greenery, different angle..."></textarea>
+      <textarea id="visualFeedback" rows="2" placeholder="e.g. Warmer colors, more minimal, add greenery..."></textarea>
       <button id="applyVisualFeedbackBtn" class="btn secondary" style="margin-top:10px;width:100%">Apply &amp; Regenerate</button>
     </details>
   </div>
 </section>
 
-<!-- STEP 4: FINAL DELIVERY -->
+<!-- Step 4: Final Delivery -->
 <section id="step4" class="step">
   <div class="card final-card">
     <div class="card-header">
@@ -328,7 +328,6 @@ details[open] summary::after{color:var(--text)}
     <button id="resetBtn" class="btn primary">+ Create Another Post</button>
   </div>
 </section>
-
 </main>
 
 <div id="loading" class="loading-overlay">
