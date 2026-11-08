@@ -1,6 +1,6 @@
 /* ============================================================
    Sprout AI Studio — complete standalone PWA
-   Text: Gemini v1 | Image: Pollinations AI (Free)
+   Text: Gemini v1beta (gemini-2.0-flash) | Image: Pollinations AI (Flux)
    ============================================================ */
 
 const $ = (s) => document.querySelector(s);
@@ -17,37 +17,40 @@ const TEMPLATES = {
   sale: { label: 'Sale / Offer', instruction: `GOAL: SALE\n- Announce offer with urgency.\n- State discount, deadline, and how to grab.\n- Strong CTA.` }
 };
 
-/* ---------- System Prompts ---------- */
+/* ---------- System Prompts (Updated for Roman Urdu & Better Images) ---------- */
 const SYSTEM_POST = `You are a professional Facebook content writer. Your only job is to transform brand context and a goal into a compelling, publish-ready Facebook post.
 Write like a real human. Adapt your tone to the brand.
+IMPORTANT: You MUST write the post in Roman Urdu (Urdu language written in English alphabet). Do not use the Urdu script. Keep the tone natural and conversational, as if a Pakistani social media manager is writing it.
 Create a hook. Build a body in 2-4 short paragraphs. Close with a natural CTA. Add 3-5 hashtags.
-NEVER use robotic words ("cutting-edge", "synergy", etc.). NEVER start with "I".
+NEVER use robotic words. NEVER start with "I".
 OUTPUT ONLY THE POST TEXT. No markdown, no quotes.`;
 
-const SYSTEM_REVISE = `You are an expert Facebook writer. Revise the post based on human feedback. Keep everything else intact. Output ONLY the revised text.`;
+const SYSTEM_REVISE = `You are an expert Facebook writer. Revise the post based on human feedback. Keep everything else intact. IMPORTANT: The output must be strictly in Roman Urdu. Output ONLY the revised text.`;
 
-const SYSTEM_NEW_POST = `You are a professional Facebook writer. The human rejected the previous post. Write a completely FRESH post from a different angle. Output ONLY the new text.`;
+const SYSTEM_NEW_POST = `You are a professional Facebook writer. The human rejected the previous post. Write a completely FRESH post from a different angle. IMPORTANT: The output must be strictly in Roman Urdu. Output ONLY the new text.`;
 
-const SYSTEM_IMAGE_PROMPT = `You are a creative director. Generate a detailed image prompt based on this post. It should be a premium visual background with NO text or typography. Output ONLY the prompt.`;
+// We force Gemini to generate a highly descriptive English prompt for the image model
+const SYSTEM_IMAGE_PROMPT = `You are an expert AI art director. Analyze the provided social media post (which is in Roman Urdu) and extract the CORE VISUAL THEME.
+Generate a highly detailed, ENGLISH-ONLY image generation prompt that will create a stunning background for this post.
+The image must perfectly match the mood, subject, and colors of the post.
+Describe the lighting, camera angle, and environment in detail.
+CRITICAL: Do NOT include any text, letters, or typography in the image.
+Output ONLY the English prompt.`;
 
-const SYSTEM_REEL = `You are a reel scriptwriter. Generate a JSON storyboard. Schema: {"title": "...", "duration": "30s", "hook": {"spoken":"...", "onScreenText":"...", "visual":"..."}, "scenes": [{"timeRange":"3-8s", "spoken":"...", "onScreenText":"...", "visual":"..."}], "cta": {...}, "music": "...", "hashtags": ["..."], "coverPrompt": "..."}. Return RAW JSON only.`;
+const SYSTEM_REEL = `You are a reel scriptwriter. Generate a JSON storyboard. The spoken text and on-screen text must be in Roman Urdu. Schema: {"title": "...", "duration": "30s", "hook": {"spoken":"...", "onScreenText":"...", "visual":"..."}, "scenes": [{"timeRange":"3-8s", "spoken":"...", "onScreenText":"...", "visual":"..."}], "cta": {...}, "music": "...", "hashtags": ["..."], "coverPrompt": "a highly detailed English prompt for the cover image, no text"}. Return RAW JSON only.`;
 
 /* ---------- State ---------- */
 const state = {
   brandName: '', brandUrl: '', goal: '', contentType: 'image',
   brandContext: '', extraNotes: '', post: '', postAttempts: 0,
   visualAttempts: 0, imagePrompt: '', imageBlob: null, imageUrl: null,
-  reelScript: null, settings: { geminiKey: '', textModel: 'gemini-1.5-flash' }
+  reelScript: null, settings: { geminiKey: '', textModel: 'gemini-2.0-flash' }
 };
 
 /* ---------- Gemini API ---------- */
 async function geminiText(systemPrompt, userMessage, apiKey, model) {
-  // Default to gemini-1.5-flash if none is provided
-  let m = model || state.settings.textModel || 'gemini-1.5-flash';
-  // Clean up common typos
-  if(m === 'gemini-1.5-flash-latest') m = 'gemini-1.5-flash'; 
-  
-  const url = `https://generativelanguage.googleapis.com/v1/models/${m}:generateContent?key=${apiKey}`;
+  let m = model || state.settings.textModel || 'gemini-2.0-flash';
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`;
   const body = { contents: [{ role: 'user', parts: [{ text: userMessage }] }] };
   if (systemPrompt) body.systemInstruction = { parts: [{ text: systemPrompt }] };
 
@@ -59,7 +62,7 @@ async function geminiText(systemPrompt, userMessage, apiKey, model) {
   
   if (!res.ok) {
     const errText = await res.text();
-    if (res.status === 404) throw new Error(`404 Error: Model "${m}" nahi mila. Settings mein Text Model ko "gemini-1.5-flash" likhein.`);
+    if (res.status === 404) throw new Error(`404 Error: Model "${m}" nahi mila. Settings mein Text Model ko "gemini-2.0-flash" likhein.`);
     throw new Error('Gemini API Error: ' + errText.slice(0, 150));
   }
   
@@ -70,11 +73,18 @@ async function geminiText(systemPrompt, userMessage, apiKey, model) {
   return text;
 }
 
-/* ---------- Pollinations AI (Free Image Generation) ---------- */
+/* ---------- Pollinations AI (Free Image Generation - Upgraded to FLUX) ---------- */
 async function generateFreeImage(prompt) {
   const seed = Math.floor(Math.random() * 1000000);
-  const encodedPrompt = encodeURIComponent(prompt);
-  const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1080&height=1080&nologo=true&seed=${seed}`;
+  
+  // Add quality enhancers to force the AI to make it look professional
+  const qualityEnhancers = ", 8k resolution, masterpiece, highly detailed, photorealistic, cinematic lighting, social media background";
+  const finalPrompt = prompt + qualityEnhancers;
+  
+  const encodedPrompt = encodeURIComponent(finalPrompt);
+  
+  // We added &model=flux to use the much better Flux model!
+  const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1080&height=1080&nologo=true&seed=${seed}&model=flux`;
   
   const res = await fetch(url);
   if (!res.ok) throw new Error('Free image generation failed. Try again.');
@@ -118,13 +128,13 @@ function loadSettings() {
     Object.assign(state.settings, saved);
   } catch (_) {}
   $('#geminiKey').value = state.settings.geminiKey || '';
-  $('#textModel').value = state.settings.textModel || 'gemini-1.5-flash';
+  $('#textModel').value = state.settings.textModel || 'gemini-2.0-flash';
 }
 
 function saveSettings() {
   state.settings = {
     geminiKey: $('#geminiKey').value.trim(),
-    textModel: $('#textModel').value.trim() || 'gemini-1.5-flash'
+    textModel: $('#textModel').value.trim() || 'gemini-2.0-flash'
   };
   localStorage.setItem('sprout_settings', JSON.stringify(state.settings));
   toast('✓ Settings saved');
@@ -168,7 +178,7 @@ async function newPost() {
   if (!state.settings.geminiKey) return toast('API key missing ⚙️', true);
   state.postAttempts++;
   $('#postAttemptBadge').textContent = 'Attempt ' + state.postAttempts;
-  const userMsg = `${buildBrandBlock()}\n\n---\n\nPrevious rejected post:\n"""\n${state.post}\n"""\n\nWrite a completely fresh post from a different angle.`;
+  const userMsg = `${buildBrandBlock()}\n\n---\n\nPrevious rejected post:\n"""\n${state.post}\n"""\n\nWrite a completely fresh post from a different angle in Roman Urdu.`;
   await writePost(SYSTEM_NEW_POST, userMsg, 'Naya post likha ja raha hai...');
 }
 
@@ -234,7 +244,7 @@ async function generateVisual() {
       const coverPrompt = state.reelScript.coverPrompt || `A premium background for ${state.brandName}. No text.`;
       state.imagePrompt = coverPrompt;
 
-      showLoading('Cover image ban rahi hai...', 'Generating free image');
+      showLoading('Cover image ban rahi hai...', 'Generating free Flux image');
       const blob = await generateFreeImage(coverPrompt);
       if (state.imageUrl) URL.revokeObjectURL(state.imageUrl);
       state.imageBlob = blob;
@@ -246,13 +256,14 @@ async function generateVisual() {
       showLoading('Image prompt ban raha hai...', 'Analyzing post theme');
       let imgPrompt = '';
       try {
+        // We pass the post and ask for an ENGLISH visual prompt
         imgPrompt = await geminiText(SYSTEM_IMAGE_PROMPT, `Brand: ${state.brandName}\nPost:\n"""\n${state.post}\n"""`, state.settings.geminiKey);
       } catch (_) {
-        imgPrompt = `A modern background for ${state.brandName}, no text, premium feel`;
+        imgPrompt = `A modern, premium background related to the topic: ${state.post.substring(0, 50)}. No text.`;
       }
       state.imagePrompt = imgPrompt;
 
-      showLoading('Poster ban raha hai...', 'Free AI is generating your image');
+      showLoading('Poster ban raha hai...', 'Generating free Flux image');
       const blob = await generateFreeImage(imgPrompt);
       if (state.imageUrl) URL.revokeObjectURL(state.imageUrl);
       state.imageBlob = blob;
@@ -371,7 +382,7 @@ async function applyVisualFeedback() {
   showLoading('Feedback apply ho raha hai...');
   try {
     const refinedPrompt = await geminiText(
-      `You are an image prompt engineer. Rewrite this prompt based on feedback. Output ONLY the new prompt.`,
+      `You are an image prompt engineer. Rewrite this ENGLISH prompt based on feedback. Output ONLY the new English prompt.`,
       `Current prompt:\n"""\n${state.imagePrompt}\n"""\n\nFeedback:\n"""\n${fb}\n"""`,
       state.settings.geminiKey
     );
