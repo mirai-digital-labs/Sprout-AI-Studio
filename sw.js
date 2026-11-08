@@ -1,5 +1,5 @@
 /* Minimal service worker for PWA installability */
-const CACHE = 'sprout-v1';
+const CACHE = 'sprout-v2';
 const ASSETS = ['./', './index.html', './app.js', './manifest.json'];
 
 self.addEventListener('install', (e) => {
@@ -18,7 +18,9 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
-  if (url.hostname.includes('googleapis.com')) return;
+  // Don't cache API calls or Pollinations images
+  if (url.hostname.includes('googleapis.com') || url.hostname.includes('pollinations.ai')) return;
+  
   e.respondWith(
     caches.match(e.request).then((r) => r || fetch(e.request).catch(() => caches.match('./index.html')))
   );
