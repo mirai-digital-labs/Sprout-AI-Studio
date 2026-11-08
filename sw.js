@@ -1,4 +1,5 @@
-const CACHE = 'sprout-v3';
+/* Service worker with forced cache update */
+const CACHE = 'sprout-v5'; // <--- Version update kar diya hai taake cache clear ho
 const ASSETS = ['./', './index.html', './app.js', './manifest.json'];
 
 self.addEventListener('install', (e) => {

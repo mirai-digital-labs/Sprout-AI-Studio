@@ -37,15 +37,15 @@ const state = {
   brandName: '', brandUrl: '', goal: '', contentType: 'image',
   brandContext: '', extraNotes: '', post: '', postAttempts: 0,
   visualAttempts: 0, imagePrompt: '', imageBlob: null, imageUrl: null,
-  reelScript: null, settings: { geminiKey: '', textModel: 'gemini-1.5-flash-latest' }
+  reelScript: null, settings: { geminiKey: '', textModel: 'gemini-1.5-flash' }
 };
 
-/* ---------- Gemini API (Uses v1 endpoint) ---------- */
+/* ---------- Gemini API ---------- */
 async function geminiText(systemPrompt, userMessage, apiKey, model) {
-  // Default to gemini-1.5-flash-latest if none is provided
-  let m = model || state.settings.textModel || 'gemini-1.5-flash-latest';
+  // Default to gemini-1.5-flash if none is provided
+  let m = model || state.settings.textModel || 'gemini-1.5-flash';
   // Clean up common typos
-  if(m === 'gemini-1.5-flash') m = 'gemini-1.5-flash-latest'; 
+  if(m === 'gemini-1.5-flash-latest') m = 'gemini-1.5-flash'; 
   
   const url = `https://generativelanguage.googleapis.com/v1/models/${m}:generateContent?key=${apiKey}`;
   const body = { contents: [{ role: 'user', parts: [{ text: userMessage }] }] };
@@ -59,7 +59,7 @@ async function geminiText(systemPrompt, userMessage, apiKey, model) {
   
   if (!res.ok) {
     const errText = await res.text();
-    if (res.status === 404) throw new Error(`404 Error: Model "${m}" nahi mila. Settings mein Text Model ko "gemini-1.5-flash-latest" likhein.`);
+    if (res.status === 404) throw new Error(`404 Error: Model "${m}" nahi mila. Settings mein Text Model ko "gemini-1.5-flash" likhein.`);
     throw new Error('Gemini API Error: ' + errText.slice(0, 150));
   }
   
@@ -118,13 +118,13 @@ function loadSettings() {
     Object.assign(state.settings, saved);
   } catch (_) {}
   $('#geminiKey').value = state.settings.geminiKey || '';
-  $('#textModel').value = state.settings.textModel || 'gemini-1.5-flash-latest';
+  $('#textModel').value = state.settings.textModel || 'gemini-1.5-flash';
 }
 
 function saveSettings() {
   state.settings = {
     geminiKey: $('#geminiKey').value.trim(),
-    textModel: $('#textModel').value.trim() || 'gemini-1.5-flash-latest'
+    textModel: $('#textModel').value.trim() || 'gemini-1.5-flash'
   };
   localStorage.setItem('sprout_settings', JSON.stringify(state.settings));
   toast('✓ Settings saved');
