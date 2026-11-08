@@ -17,7 +17,7 @@ const TEMPLATES = {
   sale: { label: 'Sale / Offer', instruction: `GOAL: SALE\n- Announce offer with urgency.\n- State discount, deadline, and how to grab.\n- Strong CTA.` }
 };
 
-/* ---------- System Prompts (Updated for Roman Urdu & Better Images) ---------- */
+/* ---------- System Prompts ---------- */
 const SYSTEM_POST = `You are a professional Facebook content writer. Your only job is to transform brand context and a goal into a compelling, publish-ready Facebook post.
 Write like a real human. Adapt your tone to the brand.
 IMPORTANT: You MUST write the post in Roman Urdu (Urdu language written in English alphabet). Do not use the Urdu script. Keep the tone natural and conversational, as if a Pakistani social media manager is writing it.
@@ -29,10 +29,12 @@ const SYSTEM_REVISE = `You are an expert Facebook writer. Revise the post based 
 
 const SYSTEM_NEW_POST = `You are a professional Facebook writer. The human rejected the previous post. Write a completely FRESH post from a different angle. IMPORTANT: The output must be strictly in Roman Urdu. Output ONLY the new text.`;
 
-// We force Gemini to generate a highly descriptive English prompt for the image model
-const SYSTEM_IMAGE_PROMPT = `You are an expert AI art director. Analyze the provided social media post (which is in Roman Urdu) and extract the CORE VISUAL THEME.
-Generate a highly detailed, ENGLISH-ONLY image generation prompt that will create a stunning background for this post.
-The image must perfectly match the mood, subject, and colors of the post.
+// Updated: We force Gemini to generate a highly descriptive English prompt and include the brand style
+const SYSTEM_IMAGE_PROMPT = `You are an expert AI art director. Analyze the provided social media post (which is in Roman Urdu) and the Brand Context.
+Generate a highly detailed, ENGLISH-ONLY image generation prompt that will create a stunning visual for this post.
+The image must perfectly match the mood, subject, and colors of the post AND the brand context.
+If the brand is clothing, describe the clothes. If it's food, describe the food.
+The style must be: {STYLE}.
 Describe the lighting, camera angle, and environment in detail.
 CRITICAL: Do NOT include any text, letters, or typography in the image.
 Output ONLY the English prompt.`;
@@ -41,7 +43,7 @@ const SYSTEM_REEL = `You are a reel scriptwriter. Generate a JSON storyboard. Th
 
 /* ---------- State ---------- */
 const state = {
-  brandName: '', brandUrl: '', goal: '', contentType: 'image',
+  brandName: '', brandUrl: '', goal: '', contentType: 'image', imageStyle: 'photorealistic',
   brandContext: '', extraNotes: '', post: '', postAttempts: 0,
   visualAttempts: 0, imagePrompt: '', imageBlob: null, imageUrl: null,
   reelScript: null, settings: { geminiKey: '', textModel: 'gemini-2.0-flash' }
@@ -73,17 +75,17 @@ async function geminiText(systemPrompt, userMessage, apiKey, model) {
   return text;
 }
 
-/* ---------- Pollinations AI (Free Image Generation - Upgraded to FLUX) ---------- */
+/* ---------- Pollinations AI (Free Image Generation - Flux) ---------- */
 async function generateFreeImage(prompt) {
   const seed = Math.floor(Math.random() * 1000000);
   
-  // Add quality enhancers to force the AI to make it look professional
-  const qualityEnhancers = ", 8k resolution, masterpiece, highly detailed, photorealistic, cinematic lighting, social media background";
+  // Add quality enhancers
+  const qualityEnhancers = ", 8k resolution, masterpiece, highly detailed, perfect lighting, social media background";
   const finalPrompt = prompt + qualityEnhancers;
   
   const encodedPrompt = encodeURIComponent(finalPrompt);
   
-  // We added &model=flux to use the much better Flux model!
+  // Using Flux model for better quality
   const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1080&height=1080&nologo=true&seed=${seed}&model=flux`;
   
   const res = await fetch(url);
@@ -213,7 +215,7 @@ async function approvePost() {
     $('#visualSub').textContent = 'Reel script aur cover image ready hai.';
     $('#reelScriptContainer').classList.remove('hidden');
   } else {
-    $('#visualSub').textContent = 'Image ready hai.';
+    $('#visualSub').textContent = 'Image ready hai. Agar pasand na aaye to neechay prompt change karein.';
     $('#reelScriptContainer').classList.add('hidden');
   }
 
@@ -243,6 +245,7 @@ async function generateVisual() {
 
       const coverPrompt = state.reelScript.coverPrompt || `A premium background for ${state.brandName}. No text.`;
       state.imagePrompt = coverPrompt;
+      $('#imagePromptInput').value = coverPrompt;
 
       showLoading('Cover image ban rahi hai...', 'Generating free Flux image');
       const blob = await generateFreeImage(coverPrompt);
@@ -251,17 +254,31 @@ async function generateVisual() {
       state.imageUrl = URL.createObjectURL(blob);
       $('#previewImage').src = state.imageUrl;
       $('#previewImage').style.display = 'block';
-      $('#imagePromptDisplay').textContent = coverPrompt;
     } else {
-      showLoading('Image prompt ban raha hai...', 'Analyzing post theme');
+      showLoading('Image prompt ban raha hai...', 'Analyzing post and brand context');
       let imgPrompt = '';
+      
+      const styleMap = {
+        photorealistic: "photorealistic, real life photography",
+        cinematic: "cinematic lighting, dramatic shadows, movie still",
+        minimalist: "minimalist, clean background, simple, lots of negative space",
+        "3d_render": "3D render, octane render, modern digital art",
+        illustration: "digital illustration, artistic, painted style"
+      };
+      const selectedStyle = styleMap[state.imageStyle] || styleMap.photorealistic;
+
       try {
-        // We pass the post and ask for an ENGLISH visual prompt
-        imgPrompt = await geminiText(SYSTEM_IMAGE_PROMPT, `Brand: ${state.brandName}\nPost:\n"""\n${state.post}\n"""`, state.settings.geminiKey);
+        // Inject style and context into the system prompt
+        const customSystem = SYSTEM_IMAGE_PROMPT.replace('{STYLE}', selectedStyle);
+        const userMsg = `Brand: ${state.brandName}\nBrand Context: ${state.brandContext}\nPost:\n"""\n${state.post}\n"""`;
+        
+        imgPrompt = await geminiText(customSystem, userMsg, state.settings.geminiKey);
       } catch (_) {
-        imgPrompt = `A modern, premium background related to the topic: ${state.post.substring(0, 50)}. No text.`;
+        imgPrompt = `A ${selectedStyle} background related to ${state.brandName} (${state.brandContext}). No text.`;
       }
+      
       state.imagePrompt = imgPrompt;
+      $('#imagePromptInput').value = imgPrompt;
 
       showLoading('Poster ban raha hai...', 'Generating free Flux image');
       const blob = await generateFreeImage(imgPrompt);
@@ -270,7 +287,6 @@ async function generateVisual() {
       state.imageUrl = URL.createObjectURL(blob);
       $('#previewImage').src = state.imageUrl;
       $('#previewImage').style.display = 'block';
-      $('#imagePromptDisplay').textContent = imgPrompt;
     }
   } catch (e) {
     toast(e.message, true);
@@ -335,30 +351,18 @@ async function approveVisual() {
   toast('✓ Aap ki post tayar hai!');
 }
 
-async function regenerateVisual() {
+// NAYA: Regenerate button se pehle prompt update hota hai
+async function updateImageFromPrompt() {
+  const newPrompt = $('#imagePromptInput').value.trim();
+  if (!newPrompt) return toast('Prompt khali hai', true);
+  
+  state.imagePrompt = newPrompt;
   state.visualAttempts++;
   $('#visualAttemptBadge').textContent = 'Attempt ' + state.visualAttempts;
 
-  if (state.contentType === 'reel') {
-    showLoading('Naya cover image ban raha hai...');
-    try {
-      const blob = await generateFreeImage(state.imagePrompt);
-      if (state.imageUrl) URL.revokeObjectURL(state.imageUrl);
-      state.imageBlob = blob;
-      state.imageUrl = URL.createObjectURL(blob);
-      $('#previewImage').src = state.imageUrl;
-      toast('✓ Naya cover ready');
-    } catch (e) {
-      toast(e.message, true);
-    } finally {
-      hideLoading();
-    }
-    return;
-  }
-
-  showLoading('Naya image ban raha hai...');
+  showLoading('Nayi image ban rahi hai...', 'Generating based on your prompt');
   try {
-    const blob = await generateFreeImage(state.imagePrompt);
+    const blob = await generateFreeImage(newPrompt);
     if (state.imageUrl) URL.revokeObjectURL(state.imageUrl);
     state.imageBlob = blob;
     state.imageUrl = URL.createObjectURL(blob);
@@ -371,35 +375,32 @@ async function regenerateVisual() {
   }
 }
 
+async function regenerateVisual() {
+  updateImageFromPrompt(); // Just use the prompt in the box
+}
+
 async function applyVisualFeedback() {
   const fb = $('#visualFeedback').value.trim();
   if (!fb) return toast('Feedback likhein', true);
   if (!state.settings.geminiKey) return toast('API key missing ⚙️', true);
 
-  state.visualAttempts++;
-  $('#visualAttemptBadge').textContent = 'Attempt ' + state.visualAttempts;
-
-  showLoading('Feedback apply ho raha hai...');
+  showLoading('Feedback apply ho raha hai...', 'Refining the prompt');
   try {
     const refinedPrompt = await geminiText(
       `You are an image prompt engineer. Rewrite this ENGLISH prompt based on feedback. Output ONLY the new English prompt.`,
       `Current prompt:\n"""\n${state.imagePrompt}\n"""\n\nFeedback:\n"""\n${fb}\n"""`,
       state.settings.geminiKey
     );
+    
     state.imagePrompt = refinedPrompt;
-    $('#imagePromptDisplay').textContent = refinedPrompt;
-
-    showLoading('Naya image ban raha hai...');
-    const blob = await generateFreeImage(refinedPrompt);
-    if (state.imageUrl) URL.revokeObjectURL(state.imageUrl);
-    state.imageBlob = blob;
-    state.imageUrl = URL.createObjectURL(blob);
-    $('#previewImage').src = state.imageUrl;
+    $('#imagePromptInput').value = refinedPrompt; // Update the text box
     $('#visualFeedback').value = '';
-    toast('✓ Image updated');
+    
+    // Auto-generate new image
+    updateImageFromPrompt();
+    
   } catch (e) {
     toast(e.message, true);
-  } finally {
     hideLoading();
   }
 }
@@ -448,9 +449,9 @@ function resetApp() {
 
   $('#brandForm').reset();
   $('#postText').value = ''; $('#postFeedback').value = ''; $('#visualFeedback').value = '';
+  $('#imagePromptInput').value = '';
   $('#previewImage').src = ''; $('#previewImage').style.display = 'none';
   $('#reelScriptContainer').classList.add('hidden'); $('#reelScript').innerHTML = '';
-  $('#imagePromptDisplay').textContent = '';
   $('#postAttemptBadge').textContent = 'Attempt 1'; $('#visualAttemptBadge').textContent = 'Attempt 1';
 
   showStep(1);
@@ -471,6 +472,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     state.brandName = name; state.brandUrl = url; state.goal = goal;
     state.contentType = $('#contentType').value;
+    state.imageStyle = $('#imageStyle').value;
     state.brandContext = $('#brandContext').value.trim();
     state.extraNotes = $('#extraNotes').value.trim();
 
@@ -481,7 +483,11 @@ document.addEventListener('DOMContentLoaded', () => {
   $('#newPostBtn').addEventListener('click', newPost);
   $('#revisePostBtn').addEventListener('click', revisePost);
   $('#approveVisualBtn').addEventListener('click', approveVisual);
-  $('#regenVisualBtn').addEventListener('click', regenerateVisual);
+  
+  // Yahan humne naye buttons attach kiye hain
+  $('#regenVisualBtn').addEventListener('click', updateImageFromPrompt); 
+  $('#updatePromptBtn').addEventListener('click', updateImageFromPrompt);
+  
   $('#applyVisualFeedbackBtn').addEventListener('click', applyVisualFeedback);
   $('#downloadImageBtn').addEventListener('click', downloadImage);
   $('#downloadCaptionBtn').addEventListener('click', downloadCaption);

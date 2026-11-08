@@ -1,4 +1,4 @@
-const CACHE = 'sprout-v6'; // Version update kiya hai
+const CACHE = 'sprout-v7'; // Version update kiya hai
 const ASSETS = ['./', './index.html', './app.js', './manifest.json'];
 
 self.addEventListener('install', (e) => {

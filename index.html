@@ -171,11 +171,11 @@ details[open] summary::after{color:var(--text)}
   <input type="password" id="geminiKey" placeholder="AQ.Ab8... or AIzaSy..." autocomplete="off" />
 
   <label>Gemini Text Model</label>
-  <input type="text" id="textModel" placeholder="gemini-1.5-flash" />
+  <input type="text" id="textModel" placeholder="gemini-2.0-flash" />
 
   <p class="hint">
     🔑 Free key yahan se milegi: <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">aistudio.google.com</a><br><br>
-    🖼️ <strong>Note:</strong> Images 100% free (Pollinations AI) se generate hoti hain, isliye aap ko image model ki zaroorat nahi.<br><br>
+    🖼️ <strong>Note:</strong> Images 100% free (Pollinations AI - Flux) se generate hoti hain.<br><br>
     🔒 Ye settings sirf aap ke browser me save hoti hain (localStorage).
   </p>
 </div>
@@ -199,10 +199,10 @@ details[open] summary::after{color:var(--text)}
 
     <form id="brandForm">
       <label>Brand Name <span class="req">*</span></label>
-      <input type="text" id="brandName" placeholder="e.g. GreenLeaf Coffee Co." />
+      <input type="text" id="brandName" placeholder="e.g. Mahzare Collection" />
 
       <label>Website / Facebook Page Link <span class="req">*</span></label>
-      <input type="url" id="brandUrl" placeholder="https://yoursite.com or facebook.com/yourpage" />
+      <input type="url" id="brandUrl" placeholder="https://facebook.com/yourpage" />
 
       <label>Goal Template <span class="req">*</span></label>
       <select id="goalTemplate">
@@ -222,11 +222,21 @@ details[open] summary::after{color:var(--text)}
         <option value="reel">🎬 Reel (Script + Storyboard + Cover)</option>
       </select>
 
-      <label>Brand Context <span class="opt">(optional, but helps AI)</span></label>
-      <textarea id="brandContext" rows="3" placeholder="e.g. We sell organic coffee beans. Target: health-conscious urban professionals. Tone: warm, friendly, premium."></textarea>
+      <!-- NAYA FEATURE: Image Style -->
+      <label>Image Style <span class="req">*</span></label>
+      <select id="imageStyle">
+        <option value="photorealistic">📸 Photorealistic (Real life)</option>
+        <option value="cinematic">🎬 Cinematic (Dramatic lighting)</option>
+        <option value="minimalist">✨ Minimalist (Clean & simple)</option>
+        <option value="3d_render">🧊 3D Render (Modern digital)</option>
+        <option value="illustration">🎨 Illustration (Artistic)</option>
+      </select>
+
+      <label>Brand Context <span class="opt">(Bohat zaroori hai image ke liye!)</span></label>
+      <textarea id="brandContext" rows="3" placeholder="e.g. We sell premium men's clothing like jackets, shirts, and suits. Target: young professionals."></textarea>
 
       <label>Extra Instructions <span class="opt">(optional)</span></label>
-      <textarea id="extraNotes" rows="2" placeholder="e.g. Mention our 20% weekend discount. Use Pakistani audience tone."></textarea>
+      <textarea id="extraNotes" rows="2" placeholder="e.g. Keep the post short. Mention our 20% discount."></textarea>
 
       <button type="submit" class="btn primary">✨ Generate Post</button>
     </form>
@@ -266,7 +276,7 @@ details[open] summary::after{color:var(--text)}
       <h2><span class="step-num">3</span>Review Visual</h2>
       <span id="visualAttemptBadge" class="badge pending">Attempt 1</span>
     </div>
-    <p class="sub" id="visualSub">Image ready hai. Pasand aye to approve karein, warna regenerate karein.</p>
+    <p class="sub" id="visualSub">Image ready hai. Agar pasand na aaye to neechay prompt change kar ke Regenerate dabayen.</p>
 
     <div class="preview">
       <img id="previewImage" alt="Generated visual" />
@@ -276,20 +286,20 @@ details[open] summary::after{color:var(--text)}
       <div class="reel-script" id="reelScript"></div>
     </div>
 
-    <details>
-      <summary>🎨 Prompt used for image</summary>
-      <p id="imagePromptDisplay" style="font-size:12px;color:var(--muted);line-height:1.6;font-style:italic;word-break:break-word"></p>
-    </details>
+    <!-- NAYA FEATURE: Editable Image Prompt -->
+    <label style="margin-top:16px">Image Prompt (English) <span class="opt">- Yahan likh kar image change karein</span></label>
+    <textarea id="imagePromptInput" rows="3" style="font-size:12px; font-family:monospace;"></textarea>
+    <button id="updatePromptBtn" class="btn secondary" style="margin-top:8px; width:100%">🎨 Update Image with this Prompt</button>
 
-    <div class="btn-row">
+    <div class="btn-row" style="margin-top:16px">
       <button id="approveVisualBtn" class="btn success">✓ Approve → Finalize</button>
-      <button id="regenVisualBtn" class="btn danger">↻ Regenerate</button>
+      <button id="regenVisualBtn" class="btn danger">↻ Regenerate Same</button>
     </div>
 
     <details>
-      <summary>✏️ Tweak the visual</summary>
+      <summary>✏️ AI ko bataen ke kya change karna hai</summary>
       <label>What should change?</label>
-      <textarea id="visualFeedback" rows="2" placeholder="e.g. Warmer colors, more minimal, add greenery..."></textarea>
+      <textarea id="visualFeedback" rows="2" placeholder="e.g. Make the model wear a black jacket, add a city background..."></textarea>
       <button id="applyVisualFeedbackBtn" class="btn secondary" style="margin-top:10px;width:100%">Apply &amp; Regenerate</button>
     </details>
   </div>
