@@ -1,0 +1,25 @@
+{
+  "name": "Sprout — AI Content Studio",
+  "short_name": "Sprout",
+  "description": "AI-powered post + visual generator with human approval loops. Idea to final deliverable.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#071410",
+  "theme_color": "#10b981",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect fill='%2310b981' width='512' height='512' rx='112'/%3E%3Cpath d='M256 384V230M256 230c0-62 42-104 104-104 0 62-42 104-104 104zM256 282c0-52-35-87-87-87 0 52 35 87 87 87z' stroke='white' stroke-width='26' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect fill='%2310b981' width='512' height='512' rx='112'/%3E%3Cpath d='M256 384V230M256 230c0-62 42-104 104-104 0 62-42 104-104 104zM256 282c0-52-35-87-87-87 0 52 35 87 87 87z' stroke='white' stroke-width='26' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
